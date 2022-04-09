@@ -204,6 +204,7 @@ public class GameController implements Controller {
         if (model.getGameState()) {
           model.doCommand(new MovePlayerLeftCommand(ClientConfig.getInstance().getId()));
         }
+
       } else {
         if (nextChain != null) {
           nextChain.handle(event);
