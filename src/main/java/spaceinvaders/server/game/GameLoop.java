@@ -98,6 +98,13 @@ public class GameLoop implements Service<Void> {
 
   /** Handle user input that has happened since the last call. */
   public void processInput() {
+    // mark the original position
+    Iterator<LogicEntity> it1 = world.getIterator(PLAYER);
+    ArrayList<Integer>pos = new ArrayList<>();
+    while(it1.hasNext()){
+      LogicEntity it_player = it1.next();
+      pos.add(it_player.getX());
+    }
     Iterator<Player> it = team.iterator();
     Player player;
     while (it.hasNext()) {
@@ -119,6 +126,18 @@ public class GameLoop implements Service<Void> {
           }
         }
         commandBuf.add(new WipeOutEntityCommand(player.getId()));
+      }
+    }
+    //get the player's position, judge if it's legal, and if it is not, print out a message
+    it1 = world.getIterator(PLAYER);
+    ArrayList<Integer>newPos = new ArrayList<>();
+    while (it1.hasNext()) {
+      LogicEntity it_player = it1.next();
+      newPos.add(it_player.getX());
+    }
+    for(int i=0;i<pos.size();i++){
+      if(Math.abs(pos.get(i)-newPos.get(i))> 5 * config.speed().player().getDistance()){
+        System.out.println("CHEAT DETECTED!");
       }
     }
   }
