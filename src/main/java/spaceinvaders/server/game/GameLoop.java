@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import spaceinvaders.command.Command;
 import spaceinvaders.command.client.ChangeScoreCommand;
@@ -45,6 +47,7 @@ public class GameLoop implements Service<Void> {
   private final Integer invadersVelocityY = config.speed().invader().getDistance() * 2;
   private Integer invadersVelocityX = config.speed().invader().getDistance();
   private boolean gameOver = false;
+  private ArrayList<Integer> lastCommand ;
 
   /**
    * @param team human players.
@@ -63,6 +66,10 @@ public class GameLoop implements Service<Void> {
     this.rng = rng;
     this.threadPool = threadPool;
     invadersShooting.setRate(world.count(INVADER) * config.getInvadersShootingFactor());
+    this.lastCommand = new ArrayList<>();
+    for(int i=0;i<team.size();i++){
+      lastCommand.add(0);
+    }
   }
 
   /**
@@ -98,6 +105,31 @@ public class GameLoop implements Service<Void> {
 
   /** Handle user input that has happened since the last call. */
   public void processInput() {
+    //execute lastCommand as the prediction of current command
+    Iterator<Player> it = team.iterator();
+    Player player;
+    int p=0;
+    while (it.hasNext()) {
+      player = it.next();
+      int id = player.getId();
+      ExecutorService ex = Executors.newSingleThreadExecutor();
+      int finalP = p;
+      ex.submit(new Callable<Object>() {
+        @Override
+        public Object call() throws Exception {
+          if (lastCommand.get(finalP) > 0) {//player has turned left
+            movePlayerLeft(id);
+            System.out.println("turn left");
+          } else if (lastCommand.get(finalP) < 0) {//player has turned right
+            movePlayerRight(id);
+            System.out.println("turn right");
+          }
+          // if player has done nothing since last call, then do nothing as well
+          return null;
+        }
+      });
+      p++;
+    }
     // mark the original position
     Iterator<LogicEntity> it1 = world.getIterator(PLAYER);
     ArrayList<Integer>pos = new ArrayList<>();
@@ -105,8 +137,8 @@ public class GameLoop implements Service<Void> {
       LogicEntity it_player = it1.next();
       pos.add(it_player.getX());
     }
-    Iterator<Player> it = team.iterator();
-    Player player;
+    // original code here
+    it = team.iterator();
     while (it.hasNext()) {
       player = it.next();
       if (player.isOnline()) {
@@ -135,11 +167,43 @@ public class GameLoop implements Service<Void> {
       LogicEntity it_player = it1.next();
       newPos.add(it_player.getX());
     }
+    it = team.iterator();
     for(int i=0;i<pos.size();i++){
+      player = it.next();
       if(Math.abs(pos.get(i)-newPos.get(i))> 5 * config.speed().player().getDistance()){
         System.out.println("CHEAT DETECTED!");
       }
+      //Since I do not know the player's specific command to the server, I check the position to find out what command it is.
+      int curCommand = pos.get(i)-newPos.get(i);
+      //handle the different cases
+      int lc = lastCommand.get(i);
+      if(curCommand>0){
+        if(lc>0){
+          //The two steps are the same, we want to move left 2 times, but we already move left 4 times, so we move back 2 times
+          for(int k=0;k<2;k++) {
+            movePlayerRight(player.getId());
+          }
+        }else if(lc<0){
+          // last step we go left, but now we want to go right, so actually we stay the original place, we need to do nothing
+        }
+        else if(lc==0){
+          // last step we go left, now we do nothing, so we move back 1 time
+          movePlayerRight(player.getId());
+        }
+      }else if(curCommand<0){
+        // The logic is the same with the above logic
+        if(lc<0){
+          for(int k=0;k<2;k++) {
+            movePlayerLeft(player.getId());
+          }
+        }else if(lc==0){
+          movePlayerLeft(player.getId());
+        }
+      }
+
+      lastCommand.set(i,curCommand);
     }
+
   }
 
   /**

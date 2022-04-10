@@ -104,7 +104,7 @@ public class GameModel implements Model {
             @Override
             public Object call() throws Exception {
                 Random ra = new Random();
-                int delayTime = ra.nextInt(100);
+                int delayTime = ra.nextInt(1000);
                 Thread.sleep(delayTime);
                 connection.send(command);
                 return null;
