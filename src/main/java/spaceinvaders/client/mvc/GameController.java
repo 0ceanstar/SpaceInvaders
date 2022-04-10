@@ -203,9 +203,10 @@ public class GameController implements Controller {
       if (event.getKeyCode() == VK_LEFT) {
         if (model.getGameState()) {
             // when a movement is going to send to the server, copy it for ten times so that the play can move faster
-            for (int i = 0; i < 10; i++) {
-                model.doCommand(new MovePlayerLeftCommand(ClientConfig.getInstance().getId()));
-            }
+//            for (int i = 0; i < 10; i++) {
+//                model.doCommand(new MovePlayerLeftCommand(ClientConfig.getInstance().getId()));
+//            }
+          model.doCommand(new MovePlayerLeftCommand(ClientConfig.getInstance().getId()));
         }
 
       } else {
@@ -234,9 +235,10 @@ public class GameController implements Controller {
       if (event.getKeyCode() == VK_RIGHT) {
         if (model.getGameState()) {
             // when a movement is going to send to the server, copy it for ten times so that the play can move faster
-            for (int i = 0; i < 10; i++) {
-                model.doCommand(new MovePlayerRightCommand(ClientConfig.getInstance().getId()));
-            }
+//            for (int i = 0; i < 10; i++) {
+//                model.doCommand(new MovePlayerRightCommand(ClientConfig.getInstance().getId()));
+//            }
+          model.doCommand(new MovePlayerRightCommand(ClientConfig.getInstance().getId()));
         }
       } else {
         if (nextChain != null) {
